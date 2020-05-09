@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 import Chat from 'twitch-chat';
+import starGenerator from './starGenerator';
 
 let channels = ['moonmoon', 'antimattertape'];
 const query_vars = {};
@@ -13,7 +14,9 @@ if (query_vars.channels) {
 
 const ChatInstance = new Chat({
 	channels,
-})
+});
+
+const easeInOutQuad = t => t<.5 ? 2*t*t : -1+(4-2*t)*t;
 
 const emoteTextures = {};
 const pendingEmoteArray = [];
@@ -35,10 +38,12 @@ const setupEnvironment = require('./environment.js');
 const globalConfig = {
 	speed: 0.002,
 	emoteScale: 1,
-
+	starPlanes: 4,
 	cameraDistance: 25,
 	cameraFar: 30,
 }
+
+const starPlanesArray = new Array(globalConfig.starPlanes);
 
 const plane_geometry = new THREE.PlaneBufferGeometry(globalConfig.emoteScale, globalConfig.emoteScale);
 
@@ -72,6 +77,22 @@ window.addEventListener('DOMContentLoaded', () => {
 		scene = new THREE.Scene();
 		setupEnvironment(scene, globalConfig);
 
+		for (let index = 0; index < starPlanesArray.length; index++) {
+			const variance = (starPlanesArray.length-index)/starPlanesArray.length;
+
+			starPlanesArray[index] = starGenerator();
+			starPlanesArray[index]._progress = variance;
+			starPlanesArray[index].direction = 1;
+			starPlanesArray[index].material.blending = THREE.AdditiveBlending;
+			starPlanesArray[index].material.opacity = Math.sin(starPlanesArray[index]._progress);
+
+			starPlanesArray[index].scale.x = globalConfig.cameraDistance*3;
+			starPlanesArray[index].scale.y = globalConfig.cameraDistance*3;
+			starPlanesArray[index].position.z = -variance;
+
+			scene.add(starPlanesArray[index]);
+		}
+
 		renderer = new THREE.WebGLRenderer({ antialias: true });
 		renderer.setSize(window.innerWidth, window.innerHeight);
 		window.addEventListener('resize', () => {
@@ -93,8 +114,19 @@ window.addEventListener('DOMContentLoaded', () => {
 			}
 		}
 
-		const speedTimeRatio = (Date.now() - lastFrame) / 16;
+		let speedTimeRatio = (Date.now() - lastFrame) / 16;
+		if (speedTimeRatio === NaN) speedTimeRatio = 1;
 		lastFrame = Date.now();
+
+		for (let index = 1; index < starPlanesArray.length; index++) {
+			const element = starPlanesArray[index];
+			const ratio = 0.0001*speedTimeRatio*starPlanesArray[index].direction;
+			starPlanesArray[index]._progress += (ratio || 0.01);
+			if (starPlanesArray[index]._progress >= 1) starPlanesArray[index].direction =-1;
+			if (starPlanesArray[index]._progress <= 0) starPlanesArray[index].direction =1;
+
+			starPlanesArray[index].material.opacity = easeInOutQuad(starPlanesArray[index]._progress);
+		}
 
 		for (let index = 0; index < pendingEmoteArray.length; index++) {
 			const emotes = pendingEmoteArray[index];
