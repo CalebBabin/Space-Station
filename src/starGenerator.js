@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 module.exports = (config = {}) => {
-	config = Object.assign({ density: 2, opacity: 1, mapSize: 4096, starSize: 2 }, config);
+	config = Object.assign({ density: 5, opacity: 1, mapSize: 4096, starSize: 1.3 }, config);
 
 	const canvas = document.createElement('canvas');
 	canvas.width = config.mapSize;

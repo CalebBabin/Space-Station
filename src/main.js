@@ -41,7 +41,7 @@ const setupEnvironment = require('./environment.js');
 const globalConfig = {
 	speed: 0.002,
 	emoteScale: 1,
-	starPlanes: 4,
+	starPlanes: 10,
 	cameraDistance: 25,
 	cameraFar: 30,
 }
@@ -52,9 +52,9 @@ const plane_geometry = new THREE.PlaneBufferGeometry(globalConfig.emoteScale, gl
 
 const getSpawnPosition = () => {
 	const side = 1;//Math.random() > 0.5 ? -1 : 1;
-	const spawnHeightVariance = globalConfig.cameraDistance/1.5;
+	const spawnHeightVariance = globalConfig.cameraDistance/2;
 	return {
-		x: (globalConfig.cameraDistance*1.25)*side,
+		x: (globalConfig.cameraDistance*1.6)*side,
 		y: Math.random()*spawnHeightVariance-spawnHeightVariance/2,
 		z: Math.random()*globalConfig.cameraDistance/1.5,
 		vx: side*-1,
@@ -65,7 +65,7 @@ const getSpawnPosition = () => {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-	let camera, scene, renderer;
+	let camera, scene, renderer, emoteGroup = new THREE.Group();
 
 	const andromeda = new THREE.Mesh(
 		plane_geometry,
@@ -97,6 +97,8 @@ window.addEventListener('DOMContentLoaded', () => {
 		camera.lookAt(0, 0, 0);
 
 		scene = new THREE.Scene();
+		scene.add(emoteGroup);
+		emoteGroup.rotation.z = -Math.PI/10;
 		setupEnvironment(scene, globalConfig);
 
 		for (let index = 0; index < starPlanesArray.length; index++) {
@@ -197,7 +199,7 @@ window.addEventListener('DOMContentLoaded', () => {
 					const emote = emotes.emotes[i];
 					emotes.group.remove(emote.sprite);
 				}
-				scene.remove(emotes.group);
+				emoteGroup.remove(emotes.group);
 				pendingEmoteArray.splice(index, 1);
 			} else {
 				emotes.progress += globalConfig.speed*globalConfig.emoteSpeedRatio*speedTimeRatio;
@@ -217,7 +219,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 				if (emotes.initGroup) {
 					emotes.initGroup = false;
-					scene.add(emotes.group);
+					emoteGroup.add(emotes.group);
 				}
 			}
 		}
