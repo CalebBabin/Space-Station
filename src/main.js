@@ -3,6 +3,9 @@ import * as THREE from 'three';
 import Chat from 'twitch-chat';
 import starGenerator from './starGenerator';
 
+const andromedaPNG = require('./andromeda.png');
+const moonPNG = require('./moon.png');
+
 let channels = ['moonmoon', 'antimattertape'];
 const query_vars = {};
 const query_parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
@@ -48,13 +51,14 @@ const starPlanesArray = new Array(globalConfig.starPlanes);
 const plane_geometry = new THREE.PlaneBufferGeometry(globalConfig.emoteScale, globalConfig.emoteScale);
 
 const getSpawnPosition = () => {
-	const side = Math.random() > 0.5 ? -1 : 1;
+	const side = 1;//Math.random() > 0.5 ? -1 : 1;
+	const spawnHeightVariance = globalConfig.cameraDistance/1.5;
 	return {
-		x: globalConfig.cameraDistance*side,
-		y: Math.random()*10-5,
-		z: (Math.random() > 0.5 ? -1 : 1)*globalConfig.cameraDistance/4,
+		x: (globalConfig.cameraDistance*1.25)*side,
+		y: Math.random()*spawnHeightVariance-spawnHeightVariance/2,
+		z: Math.random()*globalConfig.cameraDistance/1.5,
 		vx: side*-1,
-		vy: (Math.random()-0.5)/4,
+		vy: (Math.random()-0.5)/7,
 		vz: (Math.random()-0.5)/2,
 		side,
 	}
@@ -62,6 +66,24 @@ const getSpawnPosition = () => {
 
 window.addEventListener('DOMContentLoaded', () => {
 	let camera, scene, renderer;
+
+	const andromeda = new THREE.Mesh(
+		plane_geometry,
+		new THREE.MeshBasicMaterial({
+			map: new THREE.TextureLoader().load(andromedaPNG),
+		}),
+	)
+	andromeda.material.blending = THREE.AdditiveBlending;
+
+	
+	const moon = new THREE.Mesh(
+		new THREE.CircleBufferGeometry(0.5, 64),
+		new THREE.MeshBasicMaterial({
+			map: new THREE.TextureLoader().load(moonPNG),
+			transparent: false,
+		}),
+	)
+	moon.material.blending = THREE.AdditiveBlending;
 
 
 	init();
@@ -88,10 +110,24 @@ window.addEventListener('DOMContentLoaded', () => {
 
 			starPlanesArray[index].scale.x = globalConfig.cameraDistance*3;
 			starPlanesArray[index].scale.y = globalConfig.cameraDistance*3;
-			starPlanesArray[index].position.z = -variance;
+			starPlanesArray[index].position.z = -variance + (-1);
 
 			scene.add(starPlanesArray[index]);
 		}
+
+		scene.add(andromeda);
+		andromeda.scale.x = 25;
+		andromeda.scale.y = 25;
+		andromeda.position.y = globalConfig.cameraDistance/1.35;
+		andromeda.position.x = globalConfig.cameraDistance*1.2;
+		andromeda.position.z = -5;
+
+		scene.add(moon);
+		moon.scale.x = 40;
+		moon.scale.y = 40;
+		moon.position.y = -globalConfig.cameraDistance;
+		moon.position.x = -globalConfig.cameraDistance*1.4;
+		moon.position.z = 0.001;
 
 		renderer = new THREE.WebGLRenderer({ antialias: true });
 		renderer.setSize(window.innerWidth, window.innerHeight);
@@ -117,6 +153,9 @@ window.addEventListener('DOMContentLoaded', () => {
 		let speedTimeRatio = (Date.now() - lastFrame) / 16;
 		if (speedTimeRatio === NaN) speedTimeRatio = 1;
 		lastFrame = Date.now();
+
+		andromeda.rotation.z += 0.0003;
+		moon.rotation.z += 0.0001;
 
 		for (let index = 1; index < starPlanesArray.length; index++) {
 			const element = starPlanesArray[index];
@@ -151,9 +190,9 @@ window.addEventListener('DOMContentLoaded', () => {
 			//emotes.group.position.z += emotes.pos.vz*ratio;
 
 			if (
-				emotes.group.position.x > globalConfig.cameraDistance*2 || 
-				emotes.group.position.x < globalConfig.cameraDistance*-2 || 
-				emotes.group.position.y > globalConfig.cameraDistance*2) {
+				emotes.group.position.x > globalConfig.cameraDistance*2.5 || 
+				emotes.group.position.x < globalConfig.cameraDistance*-2.5 || 
+				emotes.group.position.y > globalConfig.cameraDistance*2.5) {
 				for (let i = 0; i < emotes.emotes.length; i++) {
 					const emote = emotes.emotes[i];
 					emotes.group.remove(emote.sprite);
